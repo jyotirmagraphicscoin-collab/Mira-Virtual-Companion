@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aira AI - Prince Edition</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        .controls { position: absolute; bottom: 20px; width: 100%; text-align: center; }
+        button { background: #ff69b4; color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="controls">
+        <button id="startBtn">Aira ko Activate Karein (Cam/Mic)</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.154.0/examples/jsm/",
+                "@pixiv/three-vrm": "https://unpkg.com/@pixiv/three-vrm@2.0.0/lib/three-vrm.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { VRMLoaderPlugin } from '@pixiv/three-vrm';
+
+        // --- Prince, apni API key yahan likhein ---
+        const API_KEY = "YAHAN_APNI_KEY_DALO"; 
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(30, window.innerWidth/window.innerHeight, 0.1, 20);
+        camera.position.set(0, 1.4, 1.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1).normalize();
+        scene.add(light);
+
+        const loader = new GLTFLoader();
+        loader.register((parser) => new VRMLoaderPlugin(parser));
+        loader.load(
+            'MODEL.vrm', // Aapki file ka sahi naam
+            (gltf) => { scene.add(gltf.userData.vrm.scene); },
+            null,
+            (error) => console.error(error)
+        );
+
+        document.getElementById('startBtn').onclick = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            alert("Aira: Prince, main aapko dekh aur sun rahi hoon!");
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
+
