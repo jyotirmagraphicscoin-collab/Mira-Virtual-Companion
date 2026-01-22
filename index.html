@@ -33,6 +33,14 @@
         import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 
         const API_KEY = "AIzaSyCFyko-AVmjDgGlvAexNsy7bX372_Hnrf8"; 
+        // Is line ko code mein dhundiye aur aise badal dijiye:
+body: JSON.stringify({ 
+    contents: [{ 
+        parts: [{ 
+            text: "Tumhara naam Khushi hai. Tum Prince ki pyari AI dost ho. Prince jo bhi kahe, uska Hindi mein chota aur pyara jawab do. Prince ne kaha: " + text 
+        }] 
+    }] 
+})
         let currentVrm = null;
         const statusText = document.getElementById('status');
 
