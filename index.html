@@ -6,14 +6,14 @@
         body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; }
         .ui { position: absolute; bottom: 30px; width: 100%; text-align: center; z-index: 10; }
-        #status { color: #ff69b4; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 10px; display: inline-block; margin-bottom: 10px; border: 1px solid #ff69b4; min-width: 200px; }
+        #status { color: #ff69b4; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 10px; display: inline-block; margin-bottom: 10px; border: 1px solid #ff69b4; }
         button { background: #ff69b4; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 18px; box-shadow: 0 0 20px rgba(255,105,180,0.5); cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
     <div class="ui">
-        <div id="status">Aira: Hello Prince! Baat karein?</div><br>
+        <div id="status">Aira: Prince, Loading shuru ho rahi hai...</div><br>
         <button id="startBtn">Aira se Baat Karein</button>
     </div>
 
@@ -32,16 +32,65 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 
-        // --- Prince, apni API key yahan paste karein ---
-        const API_KEY = "AIzaSyA6DMzbaVGUU9Vcj-DT7u3pYQUcffokhag"; //
-        
+        const API_KEY = "AIzaSyCFyko-AVmjDgGlvAexNsy7bX372_Hnrf8"; 
         let currentVrm = null;
         const statusText = document.getElementById('status');
 
-        // Scene Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 20);
-        camera.position.set(0, 1.4, 1.3);
+        camera.position.set(0, 1.4, 1.4);
 
-        const renderer = new THREE.WebGLRenderer({
-            
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        scene.add(new THREE.DirectionalLight(0xffffff, 1.5));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+        const loader = new GLTFLoader();
+        loader.register((parser) => new VRMLoaderPlugin(parser));
+        
+        // Model load hone ka check
+        loader.load('./MODEL.vrm', (gltf) => {
+            currentVrm = gltf.userData.vrm;
+            scene.add(currentVrm.scene);
+            statusText.innerText = "Aira: Prince, main taiyar hoon!";
+        }, 
+        undefined, 
+        (err) => { statusText.innerText = "VRM Load Error: Check file name!"; });
+
+        // Voice & AI Logic
+        document.getElementById('startBtn').onclick = () => {
+            const recognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+            recognition.lang = 'hi-IN';
+            recognition.start();
+            statusText.innerText = "Sun rahi hoon...";
+
+            recognition.onresult = async (event) => {
+                const text = event.results[0][0].transcript;
+                statusText.innerText = "Prince: " + text;
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Short Hindi reply: " + text }] }] })
+                });
+                const data = await response.json();
+                const reply = data.candidates[0].content.parts[0].text;
+                
+                statusText.innerText = "Aira: " + reply;
+                const ut = new SpeechSynthesisUtterance(reply);
+                ut.lang = 'hi-IN';
+                window.speechSynthesis.speak(ut);
+            };
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (currentVrm) currentVrm.update(new THREE.Clock().getDelta());
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
